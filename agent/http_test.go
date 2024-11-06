@@ -639,23 +639,51 @@ func TestHTTPAPIResponseHeaders(t *testing.T) {
 	`)
 	defer a.Shutdown()
 
-	requireHasHeadersSet(t, a, "/v1/agent/self", "application/json")
+	requireHasHeadersSet(t, a, http.MethodGet, "/v1/agent/self", nil, api.JSONContentType)
 
 	// Check the Index page that just renders a simple message with UI disabled
 	// also gets the right headers.
-	requireHasHeadersSet(t, a, "/", "text/plain; charset=utf-8")
+	requireHasHeadersSet(t, a, http.MethodGet, "/", nil, api.JSONContentType)
 }
 
-func requireHasHeadersSet(t *testing.T, a *TestAgent, path string, contentType string) {
+func TestHTTPAPISnapshotEndpointResponseHeaders(t *testing.T) {
+	if testing.Short() {
+		t.Skip("too slow for testing.Short")
+	}
+
+	t.Parallel()
+	a := NewTestAgent(t, `
+		ui_config {
+			# Explicitly disable UI so we can ensure the index replacement gets headers too.
+			enabled = false
+		}
+		http_config {
+			response_headers = {
+				"Access-Control-Allow-Origin" = "*"
+				"X-XSS-Protection" = "1; mode=block"
+				"X-Frame-Options" = "SAMEORIGIN"
+			}
+		}
+	`)
+	defer a.Shutdown()
+
+	requireHasHeadersSet(t, a, http.MethodGet, "/v1/snapshot", nil, "application/x-gzip")
+
+	body := bytes.NewBuffer([]byte("test"))
+	requireHasHeadersSet(t, a, http.MethodPut, "/v1/snapshot", body, "text/plain")
+}
+
+func requireHasHeadersSet(t *testing.T, a *TestAgent, method, path string, body io.Reader, contentType string) {
 	t.Helper()
 
 	resp := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", path, nil)
+	req, _ := http.NewRequest(method, path, body)
 	a.enableDebug.Store(true)
 
 	a.srv.handler().ServeHTTP(resp, req)
 
 	hdrs := resp.Header()
+	reqHdrs := req.Header
 	require.Equal(t, "*", hdrs.Get("Access-Control-Allow-Origin"),
 		"Access-Control-Allow-Origin header value incorrect")
 
@@ -663,6 +691,11 @@ func requireHasHeadersSet(t *testing.T, a *TestAgent, path string, contentType s
 		"X-XSS-Protection header value incorrect")
 
 	require.Equal(t, contentType, hdrs.Get("Content-Type"),
+		"")
+
+	require.NotEmpty(t, reqHdrs.Get("Content-Type"))
+
+	require.Equal(t, contentType, reqHdrs.Get("Content-Type"),
 		"")
 }
 
@@ -684,7 +717,7 @@ func TestUIResponseHeaders(t *testing.T) {
 	defer a.Shutdown()
 
 	//response header for the UI appears to be being handled by the UI itself.
-	requireHasHeadersSet(t, a, "/ui", "text/plain; charset=utf-8")
+	requireHasHeadersSet(t, a, http.MethodGet, "/ui", nil, api.JSONContentType)
 }
 
 func TestErrorContentTypeHeaderSet(t *testing.T) {
@@ -704,7 +737,7 @@ func TestErrorContentTypeHeaderSet(t *testing.T) {
 	`)
 	defer a.Shutdown()
 
-	requireHasHeadersSet(t, a, "/fake-path-doesn't-exist", "text/plain; charset=utf-8")
+	requireHasHeadersSet(t, a, http.MethodGet, "/fake-path-doesn't-exist", nil, api.JSONContentType)
 }
 
 func TestAcceptEncodingGzip(t *testing.T) {
@@ -1874,4 +1907,7 @@ func TestWithRemoteAddrHandler_InvalidAddr(t *testing.T) {
 	remoteAddrHandler.ServeHTTP(httptest.NewRecorder(), req)
 
 	assert.True(t, nextHandlerCalled, "expected next handler to be called")
+}
+
+func TestValidateContentTypeHeader(t *testing.T) {
 }

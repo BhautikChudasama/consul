@@ -377,6 +377,9 @@ type Config struct {
 	// which overrides the agent's default token.
 	Token string
 
+	// ContentType is the content type to use for the request
+	ContentType string
+
 	// TokenFile is a file containing the current token to use for this client.
 	// If provided it is read once at startup and never again.
 	TokenFile string
@@ -1078,6 +1081,11 @@ func (c *Client) newRequest(method, path string) *request {
 	if c.config.Token != "" {
 		r.header.Set("X-Consul-Token", r.config.Token)
 	}
+
+	if c.config.ContentType != "" {
+		r.header.Set("Content-Type", c.config.ContentType)
+	}
+
 	return r
 }
 
@@ -1087,8 +1095,23 @@ func (c *Client) doRequest(r *request) (time.Duration, *http.Response, error) {
 	if err != nil {
 		return 0, nil, err
 	}
+
+	contentType := DetermineContentType(req)
+
+	// validate request content-type header
+	reqContentType := req.Header.Get(ContentTypeHeader)
+	if reqContentType == "" || reqContentType != contentType {
+		req.Header.Set(ContentTypeHeader, contentType)
+	}
+
 	start := time.Now()
 	resp, err := c.config.HttpClient.Do(req)
+	// validate response content-type header
+	respContentType := resp.Header.Get(ContentTypeHeader)
+	if respContentType == "" {
+		resp.Header.Set(ContentTypeHeader, contentType)
+	}
+
 	diff := time.Since(start)
 	return diff, resp, err
 }
