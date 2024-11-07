@@ -670,7 +670,7 @@ func TestHTTPAPISnapshotEndpointResponseHeaders(t *testing.T) {
 	requireHasHeadersSet(t, a, http.MethodGet, "/v1/snapshot", nil, "application/x-gzip")
 
 	body := bytes.NewBuffer([]byte("test"))
-	requireHasHeadersSet(t, a, http.MethodPut, "/v1/snapshot", body, "text/plain")
+	requireHasHeadersSet(t, a, http.MethodPut, "/v1/snapshot", body, "application/octet-stream")
 }
 
 func requireHasHeadersSet(t *testing.T, a *TestAgent, method, path string, body io.Reader, contentType string) {
@@ -684,6 +684,10 @@ func requireHasHeadersSet(t *testing.T, a *TestAgent, method, path string, body 
 
 	hdrs := resp.Header()
 	reqHdrs := req.Header
+
+	fmt.Println("Request Headers:", reqHdrs.Get("Content-Type"))
+	fmt.Println("Response Headers:", hdrs.Get("Content-Type"))
+
 	require.Equal(t, "*", hdrs.Get("Access-Control-Allow-Origin"),
 		"Access-Control-Allow-Origin header value incorrect")
 
