@@ -617,7 +617,6 @@ func TestHTTPAPI_DefaultACLPolicy(t *testing.T) {
 		})
 	}
 }
-
 func TestHTTPAPIResponseHeaders(t *testing.T) {
 	if testing.Short() {
 		t.Skip("too slow for testing.Short")
@@ -643,7 +642,7 @@ func TestHTTPAPIResponseHeaders(t *testing.T) {
 
 	// Check the Index page that just renders a simple message with UI disabled
 	// also gets the right headers.
-	requireHasHeadersSet(t, a, http.MethodGet, "/", nil, api.JSONContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/", nil, api.PlainContentType)
 }
 
 func TestHTTPAPISnapshotEndpointResponseHeaders(t *testing.T) {

@@ -61,6 +61,10 @@ func DetermineContentType(req *http.Request) string {
 		return PlainContentType
 	}
 
+	if isIndexPage(req) {
+		return PlainContentType
+	}
+
 	if strings.HasPrefix(req.URL.Path, "/v1/internal") {
 		return req.Header.Get(ContentTypeHeader)
 	}
@@ -80,4 +84,9 @@ func DetermineContentType(req *http.Request) string {
 func matchesRule(req *http.Request, rule ContentTypeRule) bool {
 	return strings.HasPrefix(req.URL.Path, rule.Path) &&
 		(rule.Method == "" || req.Method == rule.Method)
+}
+
+// isIndexPage checks if the request is for the index page
+func isIndexPage(req *http.Request) bool {
+	return req.URL.Path == "/"
 }

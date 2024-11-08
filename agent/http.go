@@ -360,10 +360,12 @@ func ensureContentTypeHeader(next http.Handler, logger hclog.Logger) http.Handle
 		}
 
 		// validate response content-type header
-		respContentType := resp.Header().Get(api.ContentTypeHeader)
-		if respContentType == "" || respContentType != contentType {
-			logger.Debug("warning: response content-type header not explicitly set.", "request-path", req.URL)
-			resp.Header().Set(api.ContentTypeHeader, contentType)
+		if resp != nil {
+			respContentType := resp.Header().Get(api.ContentTypeHeader)
+			if respContentType == "" || respContentType != contentType {
+				logger.Debug("warning: response content-type header not explicitly set.", "request-path", req.URL)
+				resp.Header().Set(api.ContentTypeHeader, contentType)
+			}
 		}
 	})
 }

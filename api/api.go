@@ -1099,9 +1099,11 @@ func (c *Client) doRequest(r *request) (time.Duration, *http.Response, error) {
 	start := time.Now()
 	resp, err := c.config.HttpClient.Do(req)
 	// validate response content-type header
-	respContentType := resp.Header.Get(ContentTypeHeader)
-	if respContentType == "" || respContentType != contentType {
-		resp.Header.Set(ContentTypeHeader, contentType)
+	if resp != nil {
+		respContentType := resp.Header.Get(ContentTypeHeader)
+		if respContentType == "" || respContentType != contentType {
+			resp.Header.Set(ContentTypeHeader, contentType)
+		}
 	}
 
 	diff := time.Since(start)
