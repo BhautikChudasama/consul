@@ -684,8 +684,7 @@ func requireHasHeadersSet(t *testing.T, a *TestAgent, method, path string, body 
 	hdrs := resp.Header()
 	reqHdrs := req.Header
 
-	fmt.Println("Request Headers:", reqHdrs.Get("Content-Type"))
-	fmt.Println("Response Headers:", hdrs.Get("Content-Type"))
+	fmt.Println("Body: ", resp.Body.String())
 
 	require.Equal(t, "*", hdrs.Get("Access-Control-Allow-Origin"),
 		"Access-Control-Allow-Origin header value incorrect")
@@ -720,7 +719,7 @@ func TestUIResponseHeaders(t *testing.T) {
 	defer a.Shutdown()
 
 	//response header for the UI appears to be being handled by the UI itself.
-	requireHasHeadersSet(t, a, http.MethodGet, "/ui", nil, api.JSONContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/ui", nil, api.PlainContentType)
 }
 
 func TestErrorContentTypeHeaderSet(t *testing.T) {
@@ -1910,7 +1909,4 @@ func TestWithRemoteAddrHandler_InvalidAddr(t *testing.T) {
 	remoteAddrHandler.ServeHTTP(httptest.NewRecorder(), req)
 
 	assert.True(t, nextHandlerCalled, "expected next handler to be called")
-}
-
-func TestValidateContentTypeHeader(t *testing.T) {
 }

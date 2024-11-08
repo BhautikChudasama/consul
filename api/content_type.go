@@ -15,42 +15,47 @@ const (
 )
 
 // ContentTypeRule defines a rule for content type determination
-type ContentTypeRule struct {
-	Path        string
-	Method      string
-	ContentType string
+type contentTypeRule struct {
+	path        string
+	method      string
+	contentType string
 }
 
-var contentTypeRules = []ContentTypeRule{
+var contentTypeRules = []contentTypeRule{
 	{
-		Path:        "/v1/snapshot",
-		Method:      http.MethodGet,
-		ContentType: "application/x-gzip",
+		path:        "/v1/snapshot",
+		method:      http.MethodGet,
+		contentType: "application/x-gzip",
 	},
 	{
-		Path:        "/v1/snapshot",
-		Method:      http.MethodPut,
-		ContentType: "application/octet-stream",
+		path:        "/v1/snapshot",
+		method:      http.MethodPut,
+		contentType: "application/octet-stream",
 	},
 	{
-		Path:        "/v1/kv",
-		Method:      http.MethodPut,
-		ContentType: "application/octet-stream",
+		path:        "/v1/kv",
+		method:      http.MethodPut,
+		contentType: "application/octet-stream",
 	},
 	{
-		Path:        "/v1/kv",
-		Method:      http.MethodDelete,
-		ContentType: "",
+		path:        "/v1/kv",
+		method:      http.MethodDelete,
+		contentType: "",
 	},
 	{
-		Path:        "/v1/kv",
-		Method:      http.MethodGet,
-		ContentType: "",
+		path:        "/v1/kv",
+		method:      http.MethodGet,
+		contentType: "",
 	},
 	{
-		Path:        "/v1/event/fire",
-		Method:      http.MethodPut,
-		ContentType: "application/octet-stream",
+		path:        "/v1/event/fire",
+		method:      http.MethodPut,
+		contentType: "application/octet-stream",
+	},
+	{
+		path:        "/ui",
+		method:      http.MethodGet,
+		contentType: PlainContentType,
 	},
 }
 
@@ -72,7 +77,7 @@ func DetermineContentType(req *http.Request) string {
 	// Check against defined endpoint and required content type rules
 	for _, rule := range contentTypeRules {
 		if matchesRule(req, rule) {
-			return rule.ContentType
+			return rule.contentType
 		}
 	}
 
@@ -81,9 +86,9 @@ func DetermineContentType(req *http.Request) string {
 }
 
 // matchesRule checks if a request matches a content type rule
-func matchesRule(req *http.Request, rule ContentTypeRule) bool {
-	return strings.HasPrefix(req.URL.Path, rule.Path) &&
-		(rule.Method == "" || req.Method == rule.Method)
+func matchesRule(req *http.Request, rule contentTypeRule) bool {
+	return strings.HasPrefix(req.URL.Path, rule.path) &&
+		(rule.method == "" || req.Method == rule.method)
 }
 
 // isIndexPage checks if the request is for the index page
