@@ -45,6 +45,11 @@ import (
 	"github.com/hashicorp/consul/proto/private/pbcommon"
 )
 
+const (
+	contentTypeHeader = "Content-Type"
+	plainContentType  = "text/plain; charset=utf-8"
+)
+
 var HTTPSummaries = []prometheus.SummaryDefinition{
 	{
 		Name: []string{"api", "http"},
@@ -222,7 +227,7 @@ func (s *HTTPHandlers) handler() http.Handler {
 			// If enableDebug register wrapped pprof handlers
 			if !s.agent.enableDebug.Load() && s.checkACLDisabled() {
 				resp.WriteHeader(http.StatusNotFound)
-				resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+				resp.Header().Set(contentTypeHeader, plainContentType)
 				return
 			}
 
@@ -231,7 +236,7 @@ func (s *HTTPHandlers) handler() http.Handler {
 
 			authz, err := s.agent.delegate.ResolveTokenAndDefaultMeta(token, nil, nil)
 			if err != nil {
-				resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+				resp.Header().Set(contentTypeHeader, plainContentType)
 				resp.WriteHeader(http.StatusForbidden)
 				return
 			}
@@ -241,7 +246,7 @@ func (s *HTTPHandlers) handler() http.Handler {
 			// TODO(partitions): should this be possible in a partition?
 			// TODO(acl-error-enhancements): We should return error details somehow here.
 			if authz.OperatorRead(nil) != acl.Allow {
-				resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+				resp.Header().Set(contentTypeHeader, plainContentType)
 				resp.WriteHeader(http.StatusForbidden)
 				return
 			}
@@ -349,22 +354,22 @@ func ensureContentTypeHeader(next http.Handler, logger hclog.Logger) http.Handle
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		next.ServeHTTP(resp, req)
 
-		contentType := api.DetermineContentType(req)
+		contentType := api.SetContentType(req)
 
 		// validate request content-type header
-		reqContentType := req.Header.Get(api.ContentTypeHeader)
+		reqContentType := req.Header.Get(contentTypeHeader)
 		if reqContentType == "" || reqContentType != contentType {
 			logger.Debug("warning: request content-type is not supported", "request-path", req.URL)
 			// set request type to expected content-type
-			req.Header.Set(api.ContentTypeHeader, contentType)
+			req.Header.Set(contentTypeHeader, contentType)
 		}
 
 		// validate response content-type header
 		if resp != nil {
-			respContentType := resp.Header().Get(api.ContentTypeHeader)
+			respContentType := resp.Header().Get(contentTypeHeader)
 			if respContentType == "" || respContentType != contentType {
 				logger.Debug("warning: response content-type header not explicitly set.", "request-path", req.URL)
-				resp.Header().Set(api.ContentTypeHeader, contentType)
+				resp.Header().Set(contentTypeHeader, contentType)
 			}
 		}
 	})
@@ -414,7 +419,7 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 				"error", err,
 			)
 			//set response type to plain to prevent XSS
-			resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+			resp.Header().Set(contentTypeHeader, plainContentType)
 			resp.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -442,7 +447,7 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 				"error", errMsg,
 			)
 			//set response type to plain to prevent XSS
-			resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+			resp.Header().Set(contentTypeHeader, plainContentType)
 			resp.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(resp, errMsg)
 			return
@@ -610,7 +615,7 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 				obj, err = handler(resp, req)
 			}
 		}
-		contentType := api.JSONContentType
+		contentType := "application/json"
 		httpCode := http.StatusOK
 		if err != nil {
 			if errPayload, ok := err.(CodeWithPayloadError); ok {
@@ -623,7 +628,7 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 				}
 			} else {
 				//set response type to plain to prevent XSS
-				resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+				resp.Header().Set(contentTypeHeader, plainContentType)
 				handleErr(err)
 				return
 			}
@@ -632,11 +637,11 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 			return
 		}
 		var buf []byte
-		if contentType == api.JSONContentType {
+		if contentType == "application/json" {
 			buf, err = s.marshalJSON(req, obj)
 			if err != nil {
 				//set response type to plain to prevent XSS
-				resp.Header().Set(api.ContentTypeHeader, api.PlainContentType)
+				resp.Header().Set(contentTypeHeader, plainContentType)
 				handleErr(err)
 				return
 			}
@@ -647,7 +652,7 @@ func (s *HTTPHandlers) wrap(handler endpoint, methods []string) http.HandlerFunc
 				}
 			}
 		}
-		resp.Header().Set(api.ContentTypeHeader, contentType)
+		resp.Header().Set(contentTypeHeader, contentType)
 		resp.WriteHeader(httpCode)
 		resp.Write(buf)
 	}

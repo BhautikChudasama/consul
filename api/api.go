@@ -1088,21 +1088,23 @@ func (c *Client) doRequest(r *request) (time.Duration, *http.Response, error) {
 		return 0, nil, err
 	}
 
-	contentType := DetermineContentType(req)
+	contentType := SetContentType(req)
 
-	// validate request content-type header
-	reqContentType := req.Header.Get(ContentTypeHeader)
+	reqContentType := req.Header.Get(contentTypeHeader)
 	if reqContentType == "" || reqContentType != contentType {
-		req.Header.Set(ContentTypeHeader, contentType)
+		// Content-Type must always be set
+		req.Header.Set(contentTypeHeader, contentType)
 	}
 
 	start := time.Now()
 	resp, err := c.config.HttpClient.Do(req)
+
 	// validate response content-type header
 	if resp != nil {
-		respContentType := resp.Header.Get(ContentTypeHeader)
+		respContentType := resp.Header.Get(contentTypeHeader)
 		if respContentType == "" || respContentType != contentType {
-			resp.Header.Set(ContentTypeHeader, contentType)
+			// Content-Type must always be set
+			resp.Header.Set(contentTypeHeader, contentType)
 		}
 	}
 

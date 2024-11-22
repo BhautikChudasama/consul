@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ContentTypeHeader = "Content-Type"
-	PlainContentType  = "text/plain; charset=utf-8"
-	JSONContentType   = "application/json" // Default content type
+	contentTypeHeader = "Content-Type"
+	plainContentType  = "text/plain; charset=utf-8"
+	jsonContentType   = "application/json" // Default content type
 )
 
 // ContentTypeRule defines a rule for content type determination
@@ -55,23 +55,23 @@ var contentTypeRules = []contentTypeRule{
 	{
 		path:        "/ui",
 		method:      http.MethodGet,
-		contentType: PlainContentType,
+		contentType: plainContentType,
 	},
 }
 
-// DetermineContentType returns the appropriate content type based on the request
-// If the request is nil, returns the default content type
-func DetermineContentType(req *http.Request) string {
+// SetContentType sets the request and response Content-Type header
+func SetContentType(req *http.Request) string {
+	// If the request is nil, returns the default content type
 	if req == nil {
-		return PlainContentType
+		return plainContentType
 	}
 
 	if isIndexPage(req) {
-		return PlainContentType
+		return plainContentType
 	}
 
 	if strings.HasPrefix(req.URL.Path, "/v1/internal") {
-		return req.Header.Get(ContentTypeHeader)
+		return req.Header.Get(contentTypeHeader)
 	}
 
 	// Check against defined endpoint and required content type rules
@@ -82,7 +82,7 @@ func DetermineContentType(req *http.Request) string {
 	}
 
 	// Default to JSON for all other endpoints
-	return JSONContentType
+	return jsonContentType
 }
 
 // matchesRule checks if a request matches a content type rule

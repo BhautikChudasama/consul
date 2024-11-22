@@ -638,11 +638,11 @@ func TestHTTPAPIResponseHeaders(t *testing.T) {
 	`)
 	defer a.Shutdown()
 
-	requireHasHeadersSet(t, a, http.MethodGet, "/v1/agent/self", nil, api.JSONContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/v1/agent/self", nil, "application/json")
 
 	// Check the Index page that just renders a simple message with UI disabled
 	// also gets the right headers.
-	requireHasHeadersSet(t, a, http.MethodGet, "/", nil, api.PlainContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/", nil, "text/plain; charset=utf-8")
 }
 
 func TestHTTPAPISnapshotEndpointResponseHeaders(t *testing.T) {
@@ -684,8 +684,6 @@ func requireHasHeadersSet(t *testing.T, a *TestAgent, method, path string, body 
 	hdrs := resp.Header()
 	reqHdrs := req.Header
 
-	fmt.Println("Body: ", resp.Body.String())
-
 	require.Equal(t, "*", hdrs.Get("Access-Control-Allow-Origin"),
 		"Access-Control-Allow-Origin header value incorrect")
 
@@ -719,7 +717,7 @@ func TestUIResponseHeaders(t *testing.T) {
 	defer a.Shutdown()
 
 	//response header for the UI appears to be being handled by the UI itself.
-	requireHasHeadersSet(t, a, http.MethodGet, "/ui", nil, api.PlainContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/ui", nil, "text/plain; charset=utf-8")
 }
 
 func TestErrorContentTypeHeaderSet(t *testing.T) {
@@ -739,7 +737,7 @@ func TestErrorContentTypeHeaderSet(t *testing.T) {
 	`)
 	defer a.Shutdown()
 
-	requireHasHeadersSet(t, a, http.MethodGet, "/fake-path-doesn't-exist", nil, api.JSONContentType)
+	requireHasHeadersSet(t, a, http.MethodGet, "/fake-path-doesn't-exist", nil, "application/json")
 }
 
 func TestAcceptEncodingGzip(t *testing.T) {
